@@ -268,7 +268,7 @@ def create_interface(model_name):
                     
                     with gr.Row():
                         gr.Text("Binary:", container=False, interactive=False, elem_id="binary-term-label", scale=2)
-                        binary_term = gr.Dropdown(choices=["diversity_dino", "diversity_clip", "dino_cls_pairwise", "rgb_histogram", "palette_diversity", "texture_diversity", "fractal_diversity"], value=args.binary_term, container=False, show_label=False, scale=3)
+                        binary_term = gr.Dropdown(choices=["diversity_dino", "diversity_clip", "dino_cls_pairwise"], value=args.binary_term, container=False, show_label=False, scale=3)
         
         with gr.Row(scale=1):
             generate_btn = gr.Button("Generate", variant="primary")

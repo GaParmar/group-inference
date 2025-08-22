@@ -173,7 +173,7 @@ python src/inference.py --prompt "a photo of a robot" --model_name "flux-canny" 
 
 ### Image editing (FLUX.1 Kontext)
 ```python
-python src/inference.py --prompt "Cat is swimming in a river." --model_name "flux-kontext" --input_image "assets/example_inputs/cat.png"
+python src/inference.py --prompt "Cat is playing outside in nature." --model_name "flux-kontext" --input_image "assets/example_inputs/cat.png"
 ```
   <details open>
     <summary><b>Example Outputs: </b> </summary>
@@ -194,6 +194,19 @@ python src/inference.py --prompt "Cat is swimming in a river." --model_name "flu
           <img src='assets/example_outputs/flux_kontext/result_1.jpg' width="150px">
           <img src='assets/example_outputs/flux_kontext/result_2.jpg' width="150px">
           <img src='assets/example_outputs/flux_kontext/result_3.jpg' width="150px">
+        </td>
+      </tr>
+      <tr>
+        <td width="200px">Cat is drinking milk.</td>
+        <td width="160px">
+          <img src='assets/example_inputs/cat.png' width="150px">
+        </td>
+        <td width="75px">4</td>
+        <td width="350px">
+          <img src='assets/example_outputs/flux_kontext/cat_milk_0.webp' width="150px">
+          <img src='assets/example_outputs/flux_kontext/cat_milk_1.webp' width="150px">
+          <img src='assets/example_outputs/flux_kontext/cat_milk_2.webp' width="150px">
+          <img src='assets/example_outputs/flux_kontext/cat_milk_3.webp' width="150px">
         </td>
       </tr>
       </table>
