@@ -1,0 +1,17 @@
+name: group-inference
+channels:
+  - pytorch
+  - defaults
+dependencies:
+  - python=3.10
+  - pip:
+      - torch --index-url https://download.pytorch.org/whl/cu128
+      - torchvision --index-url https://download.pytorch.org/whl/cu128
+      - torchaudio --index-url https://download.pytorch.org/whl/cu128
+      - opencv-python
+      - transformers
+      - sentencepiece
+      - protobuf
+      - accelerate
+      - diffusers==0.35.1
+      - gurobipy

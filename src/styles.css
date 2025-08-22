@@ -1,0 +1,161 @@
+@import url('https://fonts.googleapis.com/css2?family=Varela+Round&display=swap');
+
+::selection {
+    background: rgba(255, 251, 35, 0.58);
+}
+
+body {
+    max-width: 1000px !important;
+    margin: 0 auto !important;
+}
+
+.title_left {
+    padding-top: 0vw !important;
+    filter: none !important; 
+}
+.title_left > h1 {
+    color: #2f2f2f !important;
+    font-family: "Gelasio",Georgia,serif !important;
+    font-weight: normal !important; 
+    font-size: 2.0vw !important; 
+    text-align: center !important; 
+}
+
+.title_left > h2 {
+    color: #2f2f2f !important;
+    font-family: "Gelasio",Georgia,serif !important;
+    font-weight: normal !important; 
+    font-size: 1.5vw !important; 
+    text-align: center !important; 
+}
+
+.author-container {
+    color: #2f2f2f;
+    font-family: Gelasio,"Avenir Next",Helvetica,sans-serif;
+    font-weight: normal;
+    font-size: 1vw;
+    padding-top: 0.2vw;
+    justify-items: center;
+    justify-content: center;
+    display: grid;
+    grid-template-columns: auto auto auto auto auto;
+}
+
+.affiliation-container {
+    color: #2f2f2f;
+    font-family: Gelasio,"Avenir Next",Helvetica,sans-serif;
+    font-weight: normal;
+    font-size: 1vw;
+    padding-top: 0.2vw;
+    justify-items: center;
+    justify-content: center;
+    display: grid;
+    grid-template-columns: auto auto auto auto auto;
+}
+
+.grid-item {
+    text-align: center;
+    padding-right: 0.7vw;
+    padding-left: 0.7vw;
+}
+
+.grid-item > a {
+    color: #2f2f2f;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.grid-item.cmu > a {
+    text-decoration-color: rgba(196, 18, 48, 0.2)
+}
+
+.grid-item.cmu > p::before {
+    content: "";
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    background-color: rgba(196, 18, 48, 0.6);
+    margin-right: 8px;
+    vertical-align: middle;
+}
+
+.grid-item.snap > a {
+    text-decoration-color: rgba(255,252,0, 0.4)
+}
+
+.grid-item.snap > p::before {
+    content: "";
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    background-color: rgba(255, 252, 0, 0.6);
+    margin-right: 8px;
+    vertical-align: middle;
+}
+
+.grid-item.cmu > p,
+.grid-item.snap > p {
+    color: #2f2f2f;
+}
+
+.column {
+    min-width: min(100px, 100%) !important;
+}
+
+.block {
+    min-width: min(100px, 100%) !important;
+    background: transparent !important;
+    border: none !important;
+}
+
+.gr-box, .gr-form, .gr-panel {
+    background: transparent !important;
+    border: none !important;
+}
+
+.gr-row, .gr-column {
+    background: transparent !important;
+}
+
+.gr-textbox, .gr-number, .gr-slider, .gr-dropdown {
+    background: rgba(255, 255, 255, 0.1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    backdrop-filter: blur(10px) !important;
+}
+
+.gr-button {
+    background: rgba(255, 255, 255, 0.15) !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    backdrop-filter: blur(10px) !important;
+}
+
+.gr-accordion {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    backdrop-filter: blur(5px) !important;
+}
+
+.gr-gallery {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    backdrop-filter: blur(5px) !important;
+}
+
+#starting-candidates-row > #component-7 {
+    border: none !important;
+    /* font-family: "Varela Round" !important;
+    font-weight: 500 !important;  */
+}
+
+#output-group-size-row  >#component-10{
+    border: none !important;
+    /* font-family: "Varela Round" !important; */
+    /* font-weight: 500 !important;  */
+}
+
+#pruning-ratio-label, #lambda-label, #seed-label, #unary-term-label, #binary-term-label {
+    border: none !important;
+    /* font-family: "Varela Round" !important;
+    font-weight: 500 !important;  */
+}
+
