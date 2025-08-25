@@ -2,7 +2,7 @@
 
 **TL;DR:** Treat outputs as a set; formulate group inference as a Quadratic Integer Programming (QIP) problem; scale efficiently with progressive pruning.
 
-[**Website**](https://www.cs.cmu.edu/~group-inference/) | [**Paper**](https://arxiv.org/abs/2508.15773) 
+[**Website**](https://www.cs.cmu.edu/~group-inference/) | [**Paper**](https://arxiv.org/abs/2508.15773) | [**🤗 Demo FLUX.1 Schnell**](https://huggingface.co/spaces/gparmar/Group-Inference-FLUX.1-Schnell) | [**🤗 Demo FLUX.1 Kontext**](https://huggingface.co/spaces/gparmar/Group-Inference-FLUX.1-Kontext) 
 
 
 #### **Quick start:** [**Running Locally (CLI)**](#getting-started) | [**Running Locally (Gradio UI)**](#local-gradio-demo) 
