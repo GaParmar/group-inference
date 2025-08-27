@@ -1,5 +1,4 @@
 import gradio as gr
-import copy
 import torch
 from diffusers import FluxPipeline, AutoencoderTiny, FluxControlPipeline, FluxKontextPipeline
 from my_utils.group_inference import run_group_inference
@@ -20,19 +19,20 @@ args = None
 
 def load_models(model_name, unary_term, binary_term):
     """Load diffusion pipeline and scoring functions based on model configuration.
-    
+
     Args:
         model_name: Model type (flux-schnell, flux-dev, flux-depth, flux-canny, flux-kontext)
         unary_term: Unary scoring function name for quality assessment
         binary_term: Binary scoring function name for diversity assessment
     """
     global pipe, unary_score_fn, binary_score_fn, current_model_name, current_unary_term, current_binary_term, args
-    
+
     if pipe is None or current_model_name != model_name:
         current_model_name = model_name
-        
+
         # Initialize global args object with defaults
-        args = argparse.Namespace(model_name=model_name,
+        args = argparse.Namespace(
+            model_name=model_name,
             prompt=None,
             starting_candidates=None,
             output_group_size=None,
@@ -47,7 +47,7 @@ def load_models(model_name, unary_term, binary_term):
             width=None,
         )
         args = apply_defaults(args)
-        
+
         if model_name == "flux-schnell":
             pipe = FluxPipeline.from_pretrained("black-forest-labs/FLUX.1-schnell", torch_dtype=torch.bfloat16).to("cuda")
             pipe.vae = AutoencoderTiny.from_pretrained("madebyollin/taef1", torch_dtype=torch.bfloat16).to("cuda")
@@ -65,18 +65,18 @@ def load_models(model_name, unary_term, binary_term):
             pipe.vae = AutoencoderTiny.from_pretrained("madebyollin/taef1", torch_dtype=torch.bfloat16).to("cuda")
         else:
             raise ValueError(f"Unsupported model: {model_name}")
-    
+
     # Use defaults if None provided
     if unary_term is None:
         unary_term = args.unary_term
     if binary_term is None:
         binary_term = args.binary_term
-    
+
     # Reload score functions if they changed
     if unary_score_fn is None or current_unary_term != unary_term:
         current_unary_term = unary_term
         unary_score_fn, _ = build_score_fn(unary_term, device="cuda")
-    
+
     if binary_score_fn is None or current_binary_term != binary_term:
         current_binary_term = binary_term
         binary_score_fn, _ = build_score_fn(binary_term, device="cuda")
@@ -84,7 +84,7 @@ def load_models(model_name, unary_term, binary_term):
 
 def generate_images(model_name, prompt, starting_candidates, output_group_size, pruning_ratio, lambda_score, seed, unary_term, binary_term, control_image=None, input_image=None):
     """Generate images using group inference with progressive pruning.
-    
+
     Args:
         model_name: Model type for generation
         prompt: Text prompt for image generation
@@ -99,7 +99,7 @@ def generate_images(model_name, prompt, starting_candidates, output_group_size, 
         input_image: Input image for flux-kontext editing
     """
     load_models(model_name, unary_term, binary_term)
-    
+
     # Use global args and override with user inputs
     global args
     args.prompt = prompt
@@ -110,7 +110,7 @@ def generate_images(model_name, prompt, starting_candidates, output_group_size, 
     args.seed = seed
     args.unary_term = unary_term
     args.binary_term = binary_term
-    
+
     # Create inference args
     inference_args = {
         "model_name": model_name,
@@ -126,33 +126,33 @@ def generate_images(model_name, prompt, starting_candidates, output_group_size, 
         "pruning_ratio": args.pruning_ratio,
         "lambda_score": args.lambda_score,
     }
-    
+
     # Add control image for depth and canny models
     if model_name in ["flux-depth", "flux-canny"] and control_image is not None:
         inference_args["control_image"] = control_image
-    
+
     # Add input image for flux-kontext
     if model_name == "flux-kontext" and input_image is not None:
         inference_args["input_image"] = input_image
 
     # Group inference (larger starting candidates)
-    inference_args["l_generator"] = [torch.Generator("cpu").manual_seed(args.seed+i) for i in range(args.starting_candidates)]
+    inference_args["l_generator"] = [torch.Generator("cpu").manual_seed(args.seed + i) for i in range(args.starting_candidates)]
     inference_args["starting_candidates"] = args.starting_candidates
     inference_args["skip_first_cfg"] = True
-    output_group = run_group_inference(pipe, **inference_args)    
+    output_group = run_group_inference(pipe, **inference_args)
     return output_group
 
 
 def create_interface(model_name):
     """Create Gradio interface for interactive image generation.
-    
+
     Args:
         model_name: Model type to create interface for
     """
     # Load models and initialize global args
     load_models(model_name, None, None)  # Use defaults from apply_defaults
     global args
-    
+
     # Load custom CSS
     css_path = os.path.join(os.path.dirname(__file__), "styles.css")
     with open(css_path, "r") as f:
@@ -171,23 +171,11 @@ def create_interface(model_name):
 
     # Create Gradio interface
     with gr.Blocks(css=custom_css, js=js_func, theme=gr.themes.Soft(), elem_id="main-container") as demo:
-        
+
         # Title and description
-        model_title_map = {
-            "flux-schnell": "FLUX.1-Schnell",
-            "flux-dev": "FLUX.1-Dev", 
-            "flux-depth": "FLUX.1-Depth",
-            "flux-canny": "FLUX.1-Canny",
-            "flux-kontext": "FLUX.1-Kontext"
-        }
-        
-        demo_type_map = {
-            "flux-schnell": "Text-to-Image",
-            "flux-dev": "Text-to-Image",
-            "flux-depth": "Depth-to-Image", 
-            "flux-canny": "Canny-to-Image",
-            "flux-kontext": "Image Editing"
-        }
+        model_title_map = {"flux-schnell": "FLUX.1-Schnell", "flux-dev": "FLUX.1-Dev", "flux-depth": "FLUX.1-Depth", "flux-canny": "FLUX.1-Canny", "flux-kontext": "FLUX.1-Kontext"}
+
+        demo_type_map = {"flux-schnell": "Text-to-Image", "flux-dev": "Text-to-Image", "flux-depth": "Depth-to-Image", "flux-canny": "Canny-to-Image", "flux-kontext": "Image Editing"}
 
         gr.HTML(
             f"""
@@ -226,9 +214,9 @@ def create_interface(model_name):
                 else:
                     prompt_placeholder = "A photo of a dog"
                     prompt_default = "A photo of a dog"
-                    
+
                 prompt = gr.Textbox(label="Prompt", placeholder=prompt_placeholder, lines=4, value=prompt_default)
-                
+
                 # Show control image upload for depth and canny models, input image for flux-kontext
                 control_image = None
                 input_image = None
@@ -238,16 +226,16 @@ def create_interface(model_name):
                     control_image = gr.Image(label="Canny Edge Map", type="pil", sources=["upload"])
                 elif model_name == "flux-kontext":
                     input_image = gr.Image(label="Input Image", type="pil", sources=["upload"])
-            
+
             with gr.Column(scale=1.0):
                 with gr.Row(elem_id="starting-candidates-row"):
                     gr.Text("Starting Candidates:", container=False, interactive=False, scale=5)
                     starting_candidates = gr.Number(value=args.starting_candidates, precision=0, container=False, show_label=False, scale=1)
-                
+
                 with gr.Row(elem_id="output-group-size-row"):
                     gr.Text("Output Group Size:", container=False, interactive=False, scale=5)
                     output_group_size = gr.Number(value=args.output_group_size, precision=0, container=False, show_label=False, scale=1)
-                
+
             with gr.Column(scale=1.0):
                 with gr.Accordion("Advanced Options", open=False, elem_id="advanced-options-accordion"):
                     with gr.Row():
@@ -261,24 +249,24 @@ def create_interface(model_name):
                     with gr.Row():
                         gr.Text("Seed:", container=False, interactive=False, elem_id="seed-label", scale=5)
                         seed = gr.Number(value=42, precision=0, container=False, show_label=False, scale=1)
-                    
+
                     with gr.Row():
                         gr.Text("Unary:", container=False, interactive=False, elem_id="unary-term-label", scale=2)
                         unary_term = gr.Dropdown(choices=["clip_text_img"], value=args.unary_term, container=False, show_label=False, scale=3)
-                    
+
                     with gr.Row():
                         gr.Text("Binary:", container=False, interactive=False, elem_id="binary-term-label", scale=2)
                         binary_term = gr.Dropdown(choices=["diversity_dino", "diversity_clip", "dino_cls_pairwise"], value=args.binary_term, container=False, show_label=False, scale=3)
-        
+
         with gr.Row(scale=1):
             generate_btn = gr.Button("Generate", variant="primary")
-        
+
         with gr.Row(scale=1):
             output_gallery_group = gr.Gallery(label="Group Inference", show_label=True, elem_id="gallery", columns=4, height="auto")
-        
+
         # Set up the generate button click event
         inputs = [gr.State(model_name), prompt, starting_candidates, output_group_size, pruning_ratio, lambda_score, seed, unary_term, binary_term]
-        
+
         # Always include both control_image and input_image in inputs, using None for unused ones
         if model_name in ["flux-depth", "flux-canny"]:
             inputs.extend([control_image, gr.State(None)])
@@ -286,13 +274,9 @@ def create_interface(model_name):
             inputs.extend([gr.State(None), input_image])
         else:
             inputs.extend([gr.State(None), gr.State(None)])
-        
-        generate_btn.click(
-            fn=generate_images,
-            inputs=inputs,
-            outputs=[output_gallery_group]
-        )
-    
+
+        generate_btn.click(fn=generate_images, inputs=inputs, outputs=[output_gallery_group])
+
     return demo
 
 

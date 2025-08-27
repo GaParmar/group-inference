@@ -2,9 +2,6 @@ import functools
 import torch
 import numpy as np
 import torch.nn.functional as F
-import torch.nn as nn
-import torchvision.models as models
-import torchvision.transforms as transforms
 
 from transformers import CLIPProcessor, CLIPModel, AutoModel
 from transformers.models.clip.modeling_clip import _get_vector_norm

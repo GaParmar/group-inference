@@ -10,7 +10,7 @@ DEFAULT_VALUES = {
         "height": 768,
         "width": 768,
         "unary_term": "clip_text_img",
-        "binary_term": "diversity_dino"
+        "binary_term": "diversity_dino",
     },
     "flux-dev": {
         "num_inference_steps": 20,
@@ -23,7 +23,7 @@ DEFAULT_VALUES = {
         "height": 768,
         "width": 768,
         "unary_term": "clip_text_img",
-        "binary_term": "diversity_dino"
+        "binary_term": "diversity_dino",
     },
     "flux-depth": {
         "num_inference_steps": 20,
@@ -36,7 +36,7 @@ DEFAULT_VALUES = {
         "height": 768,
         "width": 768,
         "unary_term": "clip_text_img",
-        "binary_term": "diversity_dino"
+        "binary_term": "diversity_dino",
     },
     "flux-canny": {
         "num_inference_steps": 20,
@@ -49,7 +49,7 @@ DEFAULT_VALUES = {
         "height": 768,
         "width": 768,
         "unary_term": "clip_text_img",
-        "binary_term": "diversity_dino"
+        "binary_term": "diversity_dino",
     },
     "flux-kontext": {
         "num_inference_steps": 28,
@@ -62,20 +62,21 @@ DEFAULT_VALUES = {
         "height": 1024,
         "width": 1024,
         "unary_term": "clip_text_img",
-        "binary_term": "diversity_dino"
-    }
+        "binary_term": "diversity_dino",
+    },
 }
+
 
 def apply_defaults(args):
     model_name = args.model_name
-    
+
     if model_name not in DEFAULT_VALUES:
         raise ValueError(f"Unknown model name: {model_name}. Available models: {list(DEFAULT_VALUES.keys())}")
-    
+
     defaults = DEFAULT_VALUES[model_name]
-    
+
     for param_name, default_value in defaults.items():
         if hasattr(args, param_name) and getattr(args, param_name) is None:
             setattr(args, param_name, default_value)
-    
-    return args 
+
+    return args

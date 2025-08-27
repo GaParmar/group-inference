@@ -1,4 +1,3 @@
-import os, sys
 import math
 import torch
 import numpy as np
@@ -285,7 +284,7 @@ def run_group_inference(
 
     # Compute binary scores
     final_binary_scores = binary_score_fn(l_images_tensor)
-    print(f"Binary score matrix (diversity):")
+    print("Binary score matrix (diversity):")
     print(final_binary_scores)
 
     print("=" * 50)
