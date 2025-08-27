@@ -1,4 +1,4 @@
-import os, sys, argparse, json
+import os, argparse, json
 import torch
 from diffusers import FluxPipeline, AutoencoderTiny, FluxControlPipeline
 from diffusers.pipelines.flux.pipeline_flux_kontext import FluxKontextPipeline
@@ -11,7 +11,7 @@ from my_utils.default_values import apply_defaults
 
 def build_parser(parser):
     """Build command line argument parser for image generation parameters.
-    
+
     Args:
         parser: ArgumentParser instance to add arguments to
     """
@@ -44,19 +44,19 @@ def build_parser(parser):
 
 def main(args):
     """Main function to run image generation with group inference.
-    
+
     Args:
         args: Parsed command line arguments containing generation parameters
     """
     # apply default values based on model_name
     args = apply_defaults(args)
-    
+
     # create output directory if it doesn't exist
     os.makedirs(args.output_dir, exist_ok=True)
     # store the args in a json file
     with open(os.path.join(args.output_dir, "args.json"), "w") as f:
         json.dump(args.__dict__, f, indent=4)
-    
+
     if args.model_name == "flux-schnell":
         pipe = FluxPipeline.from_pretrained("black-forest-labs/FLUX.1-schnell", torch_dtype=torch.bfloat16).to("cuda")
         pipe.vae = AutoencoderTiny.from_pretrained("madebyollin/taef1", torch_dtype=torch.bfloat16).to("cuda")
@@ -99,8 +99,7 @@ def main(args):
         "max_sequence_length": 256,
         "height": args.height,
         "width": args.width,
-        "l_generator": [torch.Generator("cpu").manual_seed(args.seed+_i) for _i in range(args.starting_candidates)],
-
+        "l_generator": [torch.Generator("cpu").manual_seed(args.seed + _i) for _i in range(args.starting_candidates)],
         # group inference args
         "unary_score_fn": unary_score_fn,
         "binary_score_fn": binary_score_fn,
@@ -109,11 +108,11 @@ def main(args):
         "pruning_ratio": args.pruning_ratio,
         "lambda_score": args.lambda_score,
     }
-    
+
     # add control image for flux-depth and flux-canny
     if control_image is not None:
         inference_args["control_image"] = control_image
-    
+
     # add input image for flux-kontext
     if input_image is not None:
         inference_args["input_image"] = input_image
@@ -125,11 +124,9 @@ def main(args):
         image.save(os.path.join(args.output_dir, f"result_{i}.jpg"))
     _grid = Image.fromarray(np.hstack([np.array(image) for image in output_group]))
     _grid.save(os.path.join(args.output_dir, "result_grid.jpg"))
-    
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     args = build_parser(parser).parse_args()
     main(args)
-
-

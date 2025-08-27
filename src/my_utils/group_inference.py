@@ -10,7 +10,7 @@ from my_utils.solvers import gurobi_solver
 
 def get_next_size(curr_size, final_size, keep_ratio):
     """Calculate next size for progressive pruning during denoising.
-    
+
     Args:
         curr_size: Current number of candidates
         final_size: Target final size
@@ -28,7 +28,7 @@ def get_next_size(curr_size, final_size, keep_ratio):
 @torch.no_grad()
 def decode_latent(z, pipe, height, width):
     """Decode latent tensor to image using VAE decoder.
-    
+
     Args:
         z: Latent tensor to decode
         pipe: Diffusion pipeline with VAE
@@ -37,31 +37,47 @@ def decode_latent(z, pipe, height, width):
     """
     z = pipe._unpack_latents(z, height, width, pipe.vae_scale_factor)
     z = (z / pipe.vae.config.scaling_factor) + pipe.vae.config.shift_factor
-    z = pipe.vae.decode(z, return_dict=False)[0].clamp(-1,1)
+    z = pipe.vae.decode(z, return_dict=False)[0].clamp(-1, 1)
     return z
 
 
 @torch.no_grad()
-def run_group_inference(pipe, model_name=None, prompt=None, prompt_2=None, negative_prompt=None, negative_prompt_2=None, 
-        true_cfg_scale=1.0, height=None, width=None, num_inference_steps=28, sigmas=None, guidance_scale=3.5, 
-        l_generator=None, max_sequence_length=512,
-        # group inference arguments
-        unary_score_fn=None, binary_score_fn=None,
-        starting_candidates=None, output_group_size=None, pruning_ratio=None, lambda_score=None,
-        # control arguments
-        control_image=None,
-        # input image for flux-kontext
-        input_image=None,
-        skip_first_cfg=True
+def run_group_inference(
+    pipe,
+    model_name=None,
+    prompt=None,
+    prompt_2=None,
+    negative_prompt=None,
+    negative_prompt_2=None,
+    true_cfg_scale=1.0,
+    height=None,
+    width=None,
+    num_inference_steps=28,
+    sigmas=None,
+    guidance_scale=3.5,
+    l_generator=None,
+    max_sequence_length=512,
+    # group inference arguments
+    unary_score_fn=None,
+    binary_score_fn=None,
+    starting_candidates=None,
+    output_group_size=None,
+    pruning_ratio=None,
+    lambda_score=None,
+    # control arguments
+    control_image=None,
+    # input image for flux-kontext
+    input_image=None,
+    skip_first_cfg=True,
 ):
     """Run group inference with progressive pruning for diverse, high-quality image generation.
-    
+
     Args:
         pipe: Diffusion pipeline
         model_name: Model type (flux-schnell, flux-dev, flux-depth, flux-canny, flux-kontext)
         prompt: Text prompt for generation
         unary_score_fn: Function to compute image quality scores
-        binary_score_fn: Function to compute pairwise diversity scores  
+        binary_score_fn: Function to compute pairwise diversity scores
         starting_candidates: Initial number of noise samples
         output_group_size: Final number of images to generate
         pruning_ratio: Fraction to prune at each denoising step
@@ -70,7 +86,7 @@ def run_group_inference(pipe, model_name=None, prompt=None, prompt_2=None, negat
         input_image: Input image for flux-kontext editing
     """
     if l_generator is None:
-        l_generator = [torch.Generator("cpu").manual_seed(42+_seed) for _seed in range(starting_candidates)]
+        l_generator = [torch.Generator("cpu").manual_seed(42 + _seed) for _seed in range(starting_candidates)]
 
     # use the default height and width if not provided
     height = height or pipe.default_sample_size * pipe.vae_scale_factor
@@ -89,9 +105,11 @@ def run_group_inference(pipe, model_name=None, prompt=None, prompt_2=None, negat
 
     # 3. Encode prompts
     prompt_embeds, pooled_prompt_embeds, text_ids = pipe.encode_prompt(prompt=prompt, prompt_2=prompt_2, prompt_embeds=None, pooled_prompt_embeds=None, device=device, max_sequence_length=max_sequence_length, lora_scale=lora_scale)
-    
+
     if do_true_cfg:
-        negative_prompt_embeds, negative_pooled_prompt_embeds, _ = pipe.encode_prompt(prompt=negative_prompt, prompt_2=negative_prompt_2, prompt_embeds=None, pooled_prompt_embeds=None, device=device, max_sequence_length=max_sequence_length, lora_scale=lora_scale)
+        negative_prompt_embeds, negative_pooled_prompt_embeds, _ = pipe.encode_prompt(
+            prompt=negative_prompt, prompt_2=negative_prompt_2, prompt_embeds=None, pooled_prompt_embeds=None, device=device, max_sequence_length=max_sequence_length, lora_scale=lora_scale
+        )
 
     # 4. Prepare latent variables
     if model_name in ["flux-depth", "flux-canny"]:
@@ -99,7 +117,7 @@ def run_group_inference(pipe, model_name=None, prompt=None, prompt_2=None, negat
         num_channels_latents = pipe.transformer.config.in_channels // 8
     else:
         num_channels_latents = pipe.transformer.config.in_channels // 4
-    
+
     # Handle different model types
     image_latents = None
     image_ids = None
@@ -107,16 +125,10 @@ def run_group_inference(pipe, model_name=None, prompt=None, prompt_2=None, negat
         processed_image = pipe.image_processor.preprocess(input_image, height=height, width=width)
         l_latents = []
         for _gen in l_generator:
-            latents, img_latents, latent_ids, img_ids = pipe.prepare_latents(
-                processed_image, 1, num_channels_latents, height, width, 
-                prompt_embeds.dtype, device, _gen
-            )
+            latents, img_latents, latent_ids, img_ids = pipe.prepare_latents(processed_image, 1, num_channels_latents, height, width, prompt_embeds.dtype, device, _gen)
             l_latents.append(latents)
         # Use the image_latents and image_ids from the first generator
-        _, image_latents, latent_image_ids, image_ids = pipe.prepare_latents(
-            processed_image, 1, num_channels_latents, height, width, 
-            prompt_embeds.dtype, device, l_generator[0]
-        )
+        _, image_latents, latent_image_ids, image_ids = pipe.prepare_latents(processed_image, 1, num_channels_latents, height, width, prompt_embeds.dtype, device, l_generator[0])
         # Combine latent_ids with image_ids
         if image_ids is not None:
             latent_image_ids = torch.cat([latent_image_ids, image_ids], dim=0)
@@ -124,11 +136,19 @@ def run_group_inference(pipe, model_name=None, prompt=None, prompt_2=None, negat
         # For other models (flux-schnell, flux-dev, flux-depth, flux-canny)
         l_latents = [pipe.prepare_latents(1, num_channels_latents, height, width, prompt_embeds.dtype, device, _gen)[0] for _gen in l_generator]
         _, latent_image_ids = pipe.prepare_latents(1, num_channels_latents, height, width, prompt_embeds.dtype, device, l_generator[0])
-    
+
     # 4.5. Prepare control image if provided
     control_latents = None
     if model_name in ["flux-depth", "flux-canny"]:
-        control_image_processed = pipe.prepare_image(image=control_image, width=width, height=height, batch_size=1, num_images_per_prompt=1, device=device, dtype=pipe.vae.dtype,)
+        control_image_processed = pipe.prepare_image(
+            image=control_image,
+            width=width,
+            height=height,
+            batch_size=1,
+            num_images_per_prompt=1,
+            device=device,
+            dtype=pipe.vae.dtype,
+        )
         if control_image_processed.ndim == 4:
             control_latents = pipe.vae.encode(control_image_processed).latents
             control_latents = (control_latents - pipe.vae.config.shift_factor) * pipe.vae.config.scaling_factor
@@ -178,37 +198,57 @@ def run_group_inference(pipe, model_name=None, prompt=None, prompt_2=None, negat
                 else:
                     # Standard models (flux-schnell, flux-dev): use latents as is
                     latent_model_input = _latent
-                    
-                noise_pred = pipe.transformer(hidden_states=latent_model_input, timestep=timestep / 1000, guidance=curr_guidance, pooled_projections=pooled_prompt_embeds, encoder_hidden_states=prompt_embeds, txt_ids=text_ids, img_ids=latent_image_ids, joint_attention_kwargs=pipe.joint_attention_kwargs, return_dict=False)[0]
-                
+
+                noise_pred = pipe.transformer(
+                    hidden_states=latent_model_input,
+                    timestep=timestep / 1000,
+                    guidance=curr_guidance,
+                    pooled_projections=pooled_prompt_embeds,
+                    encoder_hidden_states=prompt_embeds,
+                    txt_ids=text_ids,
+                    img_ids=latent_image_ids,
+                    joint_attention_kwargs=pipe.joint_attention_kwargs,
+                    return_dict=False,
+                )[0]
+
                 # For flux-kontext, we need to slice the noise_pred to match the latents size
                 if model_name == "flux-kontext":
                     noise_pred = noise_pred[:, : _latent.size(1)]
-                
+
                 if do_true_cfg:
-                    neg_noise_pred = pipe.transformer(hidden_states=latent_model_input, timestep=timestep / 1000, guidance=curr_guidance, pooled_projections=negative_pooled_prompt_embeds, encoder_hidden_states=negative_prompt_embeds, txt_ids=text_ids, img_ids=latent_image_ids, joint_attention_kwargs=pipe.joint_attention_kwargs, return_dict=False)[0]
+                    neg_noise_pred = pipe.transformer(
+                        hidden_states=latent_model_input,
+                        timestep=timestep / 1000,
+                        guidance=curr_guidance,
+                        pooled_projections=negative_pooled_prompt_embeds,
+                        encoder_hidden_states=negative_prompt_embeds,
+                        txt_ids=text_ids,
+                        img_ids=latent_image_ids,
+                        joint_attention_kwargs=pipe.joint_attention_kwargs,
+                        return_dict=False,
+                    )[0]
                     if model_name == "flux-kontext":
                         neg_noise_pred = neg_noise_pred[:, : _latent.size(1)]
                     noise_pred = neg_noise_pred + true_cfg_scale * (noise_pred - neg_noise_pred)
                 # compute the previous noisy sample x_t -> x_t-1
                 _latent = pipe.scheduler.step(noise_pred, t, _latent, return_dict=False)[0]
-                # the scheduler is not state-less, it maintains a step index that is incremented by one after each step, 
+                # the scheduler is not state-less, it maintains a step index that is incremented by one after each step,
                 # so we need to decrease it here
                 if hasattr(pipe.scheduler, "_step_index"):
                     pipe.scheduler._step_index -= 1
-                
+
                 if type(pipe.scheduler) == FlowMatchEulerDiscreteScheduler:
                     dt = 0.0 - pipe.scheduler.sigmas[i]
                     x0_pred = _latent + dt * noise_pred
                 else:
                     raise NotImplementedError("Only Flow Scheduler is supported for now! For other schedulers, you need to manually implement the x0 prediction step.")
-                
+
                 x0_preds.append(x0_pred)
                 next_latents.append(_latent)
-            
+
             if hasattr(pipe.scheduler, "_step_index"):
                 pipe.scheduler._step_index += 1
-            
+
             # if the size of next_latents > output_group_size, prune the latents
             if len(next_latents) > output_group_size:
                 next_size = get_next_size(len(next_latents), output_group_size, 1 - pruning_ratio)
@@ -217,13 +257,13 @@ def run_group_inference(pipe, model_name=None, prompt=None, prompt_2=None, negat
                 l_x0_decoded = [decode_latent(_latent, pipe, height, width) for _latent in x0_preds]
                 # compute the unary and binary scores
                 l_unary_scores = unary_score_fn(l_x0_decoded, target_caption=prompt)
-                M_binary_scores = binary_score_fn(l_x0_decoded) # upper triangular matrix
+                M_binary_scores = binary_score_fn(l_x0_decoded)  # upper triangular matrix
                 # run with Quadratic Integer Programming sover
                 selected_indices = gurobi_solver(l_unary_scores, M_binary_scores, next_size, lam=lambda_score)
                 l_latents = [next_latents[_i] for _i in selected_indices]
             else:
                 l_latents = next_latents
-            
+
             if i == len(timesteps) - 1 or ((i + 1) > num_warmup_steps and (i + 1) % pipe.scheduler.order == 0):
                 progress_bar.update()
 
@@ -234,22 +274,21 @@ def run_group_inference(pipe, model_name=None, prompt=None, prompt_2=None, negat
     l_images = [pipe.vae.decode(_image, return_dict=False)[0] for _image in l_images]
     l_images_tensor = [image.clamp(-1, 1) for image in l_images]  # Keep tensor version for scoring
     l_images = [pipe.image_processor.postprocess(image, output_type="pil")[0] for image in l_images]
-    
+
     # Compute and print final scores
     print(f"\n=== Final Scores for {len(l_images)} generated images ===")
-    
+
     # Compute unary scores
     final_unary_scores = unary_score_fn(l_images_tensor, target_caption=prompt)
     print(f"Unary scores (quality): {final_unary_scores}")
     print(f"Mean unary score: {np.mean(final_unary_scores):.4f}")
-    
+
     # Compute binary scores
     final_binary_scores = binary_score_fn(l_images_tensor)
     print(f"Binary score matrix (diversity):")
     print(final_binary_scores)
-    
+
     print("=" * 50)
-    
+
     pipe.maybe_free_model_hooks()
     return l_images
-
