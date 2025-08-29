@@ -172,16 +172,10 @@ def binary_dino_cls_pairwise_t(l_images, device, dino_model):
     b_images = F.interpolate(b_images, size=(256, 256), mode="bilinear", align_corners=False)
     b_images = b_images * 0.5 + 0.5
     b_images = (b_images - _img_mean) / _img_std
-    all_features = dino_model(pixel_values=b_images).last_hidden_state[:, 0:1, :].cpu()  # B, 1, 768
-
-    N = len(l_images)
-    score_matrix = np.zeros((N, N))
-    for i in range(N):
-        f1 = all_features[i]
-        for j in range(i + 1, N):
-            f2 = all_features[j]
-            cos_sim = (1 - F.cosine_similarity(f1, f2, dim=1)).mean().item()
-            score_matrix[i, j] = cos_sim
+    features = dino_model(pixel_values=b_images).last_hidden_state[:, 0, :]  # B x 768
+    features_norm = F.normalize(features, p=2, dim=1)  # normalize the features
+    sim_matrix = 1 - features_norm @ features_norm.T  # computer cosine distance
+    score_matrix = sim_matrix.triu(diagonal=1).cpu().numpy()  # take the upper triangle and set digonal elements as 0
     return score_matrix
 
 
