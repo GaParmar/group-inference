@@ -110,10 +110,9 @@ def unary_clip_text_img_t(l_images, device, m_clip, preprocess_clip, target_capt
             pixel_values=b_images,
             output_attentions=False,
             output_hidden_states=False,
-            interpolate_pos_encoding=False,
-            return_dict=True,
+            interpolate_pos_encoding=False
         )
-        image_embeds = m_clip.visual_projection(vision_outputs[1])
+        image_embeds = m_clip.visual_projection(vision_outputs.pooler_output)
         image_embeds = image_embeds / _get_vector_norm(image_embeds)
         text_embeds = d_cache["text_embeds"]
         _score = torch.matmul(text_embeds, image_embeds.t().to(text_embeds.device)).t().view(-1).cpu().numpy()
@@ -205,9 +204,8 @@ def binary_clip_pairwise_t(l_images, device, m_clip, preprocess_clip):
         output_attentions=False,
         output_hidden_states=False,
         interpolate_pos_encoding=False,
-        return_dict=True,
     )
-    image_embeds = m_clip.visual_projection(vision_outputs[1])
+    image_embeds = m_clip.visual_projection(vision_outputs.pooler_output)
     image_embeds = image_embeds / _get_vector_norm(image_embeds)
 
     N = len(l_images)
