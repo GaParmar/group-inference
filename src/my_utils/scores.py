@@ -139,16 +139,13 @@ def binary_dino_pairwise_t(l_images, device, dino_model):
     b_images = F.interpolate(b_images, size=(256, 256), mode="bilinear", align_corners=False)
     b_images = b_images * 0.5 + 0.5
     b_images = (b_images - _img_mean) / _img_std
-    all_features = dino_model(pixel_values=b_images).last_hidden_state[:, 1:, :].cpu()  # B, 324, 768
-
-    N = len(l_images)
-    score_matrix = np.zeros((N, N))
-    for i in range(N):
-        f1 = all_features[i]
-        for j in range(i + 1, N):
-            f2 = all_features[j]
-            cos_sim = (1 - F.cosine_similarity(f1, f2, dim=1)).mean().item()
-            score_matrix[i, j] = cos_sim
+    all_features = dino_model(pixel_values=b_images).last_hidden_state[:, 1:, :] # B, 324, 768
+    all_features_normed = F.normalize(all_features, p=2, dim=-1)
+    # Expand dimensions to prepare for broadcasting
+    f1 = all_features_normed.unsqueeze(1)
+    f2 = all_features_normed.unsqueeze(0)
+    score_matrix = (1 - F.cosine_similarity(f1, f2, dim=-1)).mean(dim=-1)
+    score_matrix = score_matrix.triu(diagonal=1).cpu().numpy()  # take the upper triangle and set digonal elements as 0
     return score_matrix
 
 
@@ -208,12 +205,6 @@ def binary_clip_pairwise_t(l_images, device, m_clip, preprocess_clip):
     image_embeds = m_clip.visual_projection(vision_outputs.pooler_output)
     image_embeds = image_embeds / _get_vector_norm(image_embeds)
 
-    N = len(l_images)
-    score_matrix = np.zeros((N, N))
-    for i in range(N):
-        f1 = image_embeds[i]
-        for j in range(i + 1, N):
-            f2 = image_embeds[j]
-            cos_sim = (1 - torch.dot(f1, f2)).item()
-            score_matrix[i, j] = cos_sim
+    score_matrix = 1 - image_embeds @ image_embeds.T
+    score_matrix = score_matrix.triu(diagonal=1).cpu().numpy()  # take the upper triangle and set digonal elements as 0       
     return score_matrix
